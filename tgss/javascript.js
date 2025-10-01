@@ -1,114 +1,128 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const inputTugas = document.getElementById('inputTugas');
-    const btnTambahTugas = document.getElementById('btnTambahTugas');
-    const tugasList = document.getElementById('tugasList');
-    const indikatorLoading = document.getElementById('indikatorLoading');
+document.addEventListener('DOMContentLoaded', function() {
+    const taskInput = document.getElementById('taskInput');
+    const addTaskBtn = document.getElementById('addTaskBtn');
+    const taskList = document.getElementById('taskList');
+    const loadingIndicator = document.getElementById('loading');
 
-    let semuaTugas = [];
+    let tasks = [];
 
-    const tampilkanLoading = () => {
-        indikatorLoading.style.display = 'block';
-    };
+    function showLoading() {
+        loadingIndicator.style.display = 'block';
+    }
 
-    const sembunyikanLoading = () => {
-        indikatorLoading.style.display = 'none';
-    };
+    function hideLoading() {
+        loadingIndicator.style.display = 'none';
+    }
 
-    
-    const renderTugasList = () => {
-        tugasList.innerHTML = ''; 
-
-        semuaTugas.forEach(tugas => {
-            const itemTugas = document.createElement('li');
-            itemTugas.className = 'task-item';
-            if (tugas.selesai) {
-                itemTugas.classList.add('completed');
+    function renderTasks() {
+        taskList.innerHTML = '';
+        for (let i = 0; i < tasks.length; i++) {
+            const task = tasks[i];
+            const taskItem = document.createElement('li');
+            taskItem.className = 'task-item';
+            if (task.completed) {
+                taskItem.classList.add('completed');
             }
-
-            const teksTugas = document.createElement('span');
-            teksTugas.textContent = tugas.teks;
-
-            const divAksi = document.createElement('div');
-            divAksi.className = 'actions';
-
-            if (tugas.selesai) {
-                const btnBatal = document.createElement('button');
-                btnBatal.textContent = 'Batal';
-                btnBatal.className = 'btn-undo';
-                btnBatal.addEventListener('click', () => ubahStatusTugas(tugas.id));
-                divAksi.appendChild(btnBatal);
+            const taskText = document.createElement('span');
+            taskText.textContent = task.text;
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'actions';
+            if (task.completed) {
+                const undoBtn = document.createElement('button');
+                undoBtn.textContent = 'Batal';
+                undoBtn.className = 'btn-undo';
+                undoBtn.addEventListener('click', function() {
+                    toggleTaskStatus(task.id);
+                });
+                actionsDiv.appendChild(undoBtn);
             } else {
-                const btnSelesai = document.createElement('button');
-                btnSelesai.textContent = 'Selesai';
-                btnSelesai.className = 'btn-done';
-                btnSelesai.addEventListener('click', () => ubahStatusTugas(tugas.id));
-                divAksi.appendChild(btnSelesai);
+                const doneBtn = document.createElement('button');
+                doneBtn.textContent = 'Selesai';
+                doneBtn.className = 'btn-done';
+                doneBtn.addEventListener('click', function() {
+                    toggleTaskStatus(task.id);
+                });
+                actionsDiv.appendChild(doneBtn);
             }
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'Hapus';
+            deleteBtn.className = 'btn-delete';
+            deleteBtn.addEventListener('click', function() {
+                deleteTask(task.id);
+            });
+            actionsDiv.appendChild(deleteBtn);
+            taskItem.appendChild(taskText);
+            taskItem.appendChild(actionsDiv);
+            taskList.appendChild(taskItem);
+        }
+    }
 
-            const btnHapus = document.createElement('button');
-            btnHapus.textContent = 'Hapus';
-            btnHapus.className = 'btn-delete';
-            btnHapus.addEventListener('click', () => hapusTugas(tugas.id));
-            divAksi.appendChild(btnHapus);
-            
-            itemTugas.appendChild(teksTugas);
-            itemTugas.appendChild(divAksi);
-            tugasList.appendChild(itemTugas);
-        });
-    };
-
-    const tambahTugas = async () => {
-        const teksInput = inputTugas.value.trim();
-        if (teksInput === '') {
+    async function addTask() {
+        const inputText = taskInput.value.trim();
+        if (inputText === '') {
             alert('Nama tugas tidak boleh kosong!');
             return;
         }
-
-        tampilkanLoading();
-        await new Promise(resolve => setTimeout(resolve, 500)); 
-        
-        const tugasBaru = {
+        showLoading();
+        await new Promise(function(resolve) {
+            setTimeout(resolve, 500);
+        });
+        const newTask = {
             id: Date.now(),
-            teks: teksInput,
-            selesai: false,
+            text: inputText,
+            completed: false,
         };
-        semuaTugas.push(tugasBaru);
-        
-        sembunyikanLoading();
-        renderTugasList();
-        inputTugas.value = '';
-        console.log(`Pesan sukses: Tugas "${teksInput}" berhasil ditambahkan.`);
-    };
+        tasks.push(newTask);
+        hideLoading();
+        renderTasks();
+        taskInput.value = '';
+        console.log(`Pesan sukses: Tugas "${inputText}" berhasil ditambahkan.`);
+    }
 
-    // Fungsi untuk menghapus tugas
-    const hapusTugas = async (id) => {
-        const tugasYangDihapus = semuaTugas.find(tugas => tugas.id === id);
-        
-        tampilkanLoading();
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        semuaTugas = semuaTugas.filter(tugas => tugas.id !== id);
-        
-        sembunyikanLoading();
-        renderTugasList();
-        console.log(`Pesan sukses: Tugas "${tugasYangDihapus.teks}" berhasil dihapus.`);
-    };
-
-    const ubahStatusTugas = (id) => {
-        const tugas = semuaTugas.find(tugas => tugas.id === id);
-        if (tugas) {
-            tugas.selesai = !tugas.selesai;
-            renderTugasList();
+    async function deleteTask(id) {
+        let taskToDelete;
+        for (let i = 0; i < tasks.length; i++) {
+            if (tasks[i].id === id) {
+                taskToDelete = tasks[i];
+                break;
+            }
         }
-    };
-    
+        showLoading();
+        await new Promise(function(resolve) {
+            setTimeout(resolve, 500);
+        });
+        const newTasksArray = [];
+        for (let i = 0; i < tasks.length; i++) {
+            if (tasks[i].id !== id) {
+                newTasksArray.push(tasks[i]);
+            }
+        }
+        tasks = newTasksArray;
+        hideLoading();
+        renderTasks();
+        console.log(`Pesan sukses: Tugas "${taskToDelete.text}" berhasil dihapus.`);
+    }
 
-    btnTambahTugas.addEventListener('click', tambahTugas);
-    inputTugas.addEventListener('keydown', (event) => {
+    function toggleTaskStatus(id) {
+        let task;
+        for (let i = 0; i < tasks.length; i++) {
+            if (tasks[i].id === id) {
+                task = tasks[i];
+                break;
+            }
+        }
+        if (task) {
+            task.completed = !task.completed;
+            renderTasks();
+        }
+    }
+
+    addTaskBtn.addEventListener('click', addTask);
+    taskInput.addEventListener('keydown', function(event) {
         if (event.key === 'Enter') {
-            tambahTugas();
+            addTask();
         }
     });
 
-    renderTugasList();
+    renderTasks();
 });
